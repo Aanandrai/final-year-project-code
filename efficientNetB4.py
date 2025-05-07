@@ -79,8 +79,14 @@ for n, p in model.named_parameters():
     if 'classifier' not in n:
         p.requires_grad_(False)
 
-criterion = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, dtype=torch.float).to(DEVICE))
+# Compute class weights
+class_weights = np.zeros(NUM_CLASSES, dtype=np.float32)
+non_zero_classes = np.bincount([full_ds.targets[i] for i in train_idx])
+non_zero_weights = np.where(non_zero_classes == 0, 0.0, 1.0 / non_zero_classes)
+class_weights[:len(non_zero_weights)] = non_zero_weights
 
+# Define the loss function
+criterion = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, dtype=torch.float).to(DEVICE))
 # ----------- Validation Function ---------
 @torch.no_grad()
 def validate():
